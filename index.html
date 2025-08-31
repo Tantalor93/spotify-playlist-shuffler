@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Playlist Shuffler</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #121212; color: #b3b3b3; }
+        ul { list-style: none; padding: 0; }
+        li { margin-bottom: 15px; padding: 10px; border-radius: 8px; background-color: #282828; display: flex; align-items: center; }
+        li a { text-decoration: none; color: white; font-weight: bold; flex-grow: 1; }
+        .playlist-info { color: #b3b3b3; font-size: 0.9em; margin-left: 10px; }
+        .auth-button {
+            padding: 12px 20px;
+            background-color: #1DB954;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 25px;
+            font-size: 1.1em;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .message { margin-top: 20px; font-size: 1.1em; }
+    </style>
+</head>
+<body>
+<h1>Your Spotify Playlists</h1>
+<p class="message" id="message">Loading playlists...</p>
+
+<div id="auth-container" style="display: none;">
+    <p>You need to authenticate with Spotify to view and shuffle your playlists.</p>
+    <button class="auth-button" onclick="window.location.href='/auth';">Authenticate with Spotify</button>
+</div>
+
+<ul id="playlist-list" style="display: none;"></ul>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const playlistList = document.getElementById('playlist-list');
+        const authContainer = document.getElementById('auth-container');
+        const messageElement = document.getElementById('message');
+
+        try {
+            // Attempt to fetch playlist data from the Go server's /list endpoint
+            const response = await fetch('/list');
+
+            if (response.status === 401) {
+                // Server returned 401, indicating the user is not authenticated.
+                messageElement.style.display = 'none';
+                authContainer.style.display = 'block';
+            } else if (response.status === 200) {
+                // Success! The server returned JSON data.
+                const playlists = await response.json();
+
+                messageElement.style.display = 'none';
+                playlistList.style.display = 'block';
+
+                if (playlists.length === 0) {
+                    playlistList.innerHTML = '<li>No playlists found.</li>';
+                    return;
+                }
+
+                // Loop through the JSON data and create HTML list items
+                playlists.forEach(playlist => {
+                    const listItem = document.createElement('li');
+
+                    const link = document.createElement('a');
+                    // Místo přímého href na endpoint voláme JavaScriptovou funkci
+                    link.href = "#";
+                    link.textContent = playlist.name;
+                    link.onclick = (e) => {
+                        e.preventDefault(); // Zabrání výchozí akci odkazu (přesměrování)
+                        shuffleAndRedirect(playlist.shuffleTracksLink);
+                    };
+
+                    const infoSpan = document.createElement('span');
+                    infoSpan.className = 'playlist-info';
+                    infoSpan.textContent = ` (${playlist.tracksTotal} tracks)`;
+
+                    listItem.appendChild(link);
+                    listItem.appendChild(infoSpan);
+                    playlistList.appendChild(listItem);
+                });
+            } else {
+                // Handle other unexpected HTTP status codes
+                messageElement.textContent = `Unexpected failure: ${response.status}`;
+            }
+        } catch (error) {
+            // Handle network errors (e.g., server is offline)
+            authContainer.style.display = 'block';
+            console.error('Failed retrieving playlist:', error);
+        }
+    });
+
+    async function shuffleAndRedirect(url) {
+        const messageElement = document.getElementById('message');
+        messageElement.textContent = 'Shuffling...';
+        messageElement.style.display = 'block';
+
+        try {
+            const response = await fetch(url);
+
+            if (response.status === 200) {
+                window.location.href = "/";
+            } else {
+                messageElement.textContent = `Error: Failed to shuffle.`;
+            }
+        } catch (error) {
+            messageElement.textContent = `Network error: ${error.message}`;
+            console.error(error);
+        }
+    }
+</script>
+</body>
+</html>
