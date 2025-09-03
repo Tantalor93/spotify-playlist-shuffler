@@ -84,7 +84,7 @@ func listPlaylists(w http.ResponseWriter, r *http.Request) {
 			playlistsViews = append(playlistsViews,
 				PlayListView{Name: playlist.Name,
 					TracksTotal:       int(playlist.Tracks.Total),
-					TracksShuffleLink: "http://127.0.0.1:8080/shuffle?id=" + playlist.ID.String(),
+					TracksShuffleLink: "/shuffle?id=" + playlist.ID.String(),
 				},
 			)
 
@@ -231,10 +231,6 @@ func redirectToSpotify(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveHTML(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
 	http.ServeFile(w, r, "index.html")
 }
 
