@@ -12,6 +12,6 @@ WORKDIR /app
 
 COPY --from=builder /app/spotify-playlist-shuffler .
 
-COPY web .
+COPY --from=builder /app/web /app/web
 
 CMD ["./spotify-playlist-shuffler"]
