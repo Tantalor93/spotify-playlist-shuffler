@@ -231,7 +231,7 @@ func redirectToSpotify(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveHTML(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "index.html")
+	http.ServeFile(w, r, "web/index.html")
 }
 
 func getTrackIds(tracks []spotify.PlaylistItem) []spotify.ID {
