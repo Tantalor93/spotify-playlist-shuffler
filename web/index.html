@@ -10,7 +10,7 @@
         li { margin-bottom: 15px; padding: 10px; border-radius: 8px; background-color: #282828; display: flex; align-items: center; }
         li a { text-decoration: none; color: white; font-weight: bold; flex-grow: 1; }
         .playlist-info { color: #b3b3b3; font-size: 0.9em; margin-left: 10px; }
-        .auth-button {
+        .auth-button, .logout-button {
             padding: 12px 20px;
             background-color: #1DB954;
             color: white;
@@ -21,7 +21,6 @@
             margin-top: 20px;
             font-weight: bold;
         }
-        .message { margin-top: 20px; font-size: 1.1em; }
     </style>
 </head>
 <body>
@@ -35,42 +34,42 @@
 
 <ul id="playlist-list" style="display: none;"></ul>
 
+<div id="logout-container" style="display: none;">
+    <button class="logout-button" onclick="logout();">Logout</button>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
         const playlistList = document.getElementById('playlist-list');
         const authContainer = document.getElementById('auth-container');
+        const logoutContainer = document.getElementById('logout-container');
         const messageElement = document.getElementById('message');
 
         try {
-            // Attempt to fetch playlist data from the Go server's /list endpoint
             const response = await fetch('/list');
 
             if (response.status === 401) {
-                // Server returned 401, indicating the user is not authenticated.
                 messageElement.style.display = 'none';
                 authContainer.style.display = 'block';
             } else if (response.status === 200) {
-                // Success! The server returned JSON data.
                 const playlists = await response.json();
 
                 messageElement.style.display = 'none';
                 playlistList.style.display = 'block';
+                logoutContainer.style.display = 'block'; // Zobrazit tlačítko Logout
 
                 if (playlists.length === 0) {
                     playlistList.innerHTML = '<li>No playlists found.</li>';
                     return;
                 }
 
-                // Loop through the JSON data and create HTML list items
                 playlists.forEach(playlist => {
                     const listItem = document.createElement('li');
-
                     const link = document.createElement('a');
-                    // Místo přímého href na endpoint voláme JavaScriptovou funkci
                     link.href = "#";
                     link.textContent = playlist.name;
                     link.onclick = (e) => {
-                        e.preventDefault(); // Zabrání výchozí akci odkazu (přesměrování)
+                        e.preventDefault();
                         shuffleAndRedirect(playlist.shuffleTracksLink);
                     };
 
@@ -83,11 +82,9 @@
                     playlistList.appendChild(listItem);
                 });
             } else {
-                // Handle other unexpected HTTP status codes
                 messageElement.textContent = `Unexpected failure: ${response.status}`;
             }
         } catch (error) {
-            // Handle network errors (e.g., server is offline)
             authContainer.style.display = 'block';
             console.error('Failed retrieving playlist:', error);
         }
@@ -100,7 +97,6 @@
 
         try {
             const response = await fetch(link);
-
             if (response.status === 200) {
                 window.location.href = "/";
             } else {
@@ -109,6 +105,19 @@
         } catch (error) {
             messageElement.textContent = `Network error: ${error.message}`;
             console.error(error);
+        }
+    }
+
+    async function logout() {
+        try {
+            const response = await fetch('/logout');
+            if (response.ok) {
+                window.location.href = "/"; // Přesměrovat zpět na domovskou stránku, která ukáže login button
+            } else {
+                console.error('Logout failed:', await response.text());
+            }
+        } catch (error) {
+            console.error('Network error during logout:', error);
         }
     }
 </script>
